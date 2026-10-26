@@ -1,0 +1,11 @@
+# Virtual Environment (is folder ko GitHub par ignore karega)
+venv/
+ENV/
+
+# Python Temporary Cache Files
+__pycache__/
+*.pyc
+
+# Operating System Extra Files
+.DS_Store
+Thumbs.db

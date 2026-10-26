@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Institutional Stock & Technical Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen p-6">
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- Header & Search Bar -->
+        <div class="flex flex-col md:flex-row justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-emerald-400">📊 Advanced Technical & Traffic Screener</h1>
+                <p class="text-slate-400 text-xs">Volume Spikes, RSI, MACD Crossovers, VWAP & AI Sentiment</p>
+            </div>
+            
+            <div class="flex items-center gap-2 w-full md:w-auto">
+                <input id="search-input" type="text" placeholder="Enter Ticker (e.g. WIPRO, ZOMATO)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 w-full md:w-64 uppercase">
+                <button onclick="searchCustomStock()" class="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg text-sm font-semibold transition">
+                    Search
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Table Section -->
+            <div class="lg:col-span-2 bg-slate-800 rounded-xl overflow-hidden shadow-xl border border-slate-700">
+                <div class="p-4 bg-slate-700/40 border-b border-slate-700 font-semibold text-slate-300 flex justify-between items-center">
+                    <span>🔥 Institutional Technical Matrix</span>
+                    <button onclick="fetchStocks()" class="text-xs text-emerald-400 hover:underline">🔄 Reset Screener</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-700/50 text-slate-300 text-xs uppercase">
+                            <tr>
+                                <th class="p-3">Symbol</th>
+                                <th class="p-3">Price / VWAP</th>
+                                <th class="p-3">Traffic</th>
+                                <th class="p-3">RSI</th>
+                                <th class="p-3">MACD Trend</th>
+                                <th class="p-3">AI Sentiment</th>
+                                <th class="p-3">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stock-list" class="text-sm">
+                            <tr>
+                                <td colspan="7" class="p-6 text-center text-slate-400">Calculating technical indicators...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Chart & News Details Section -->
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col gap-4">
+                <div>
+                    <h2 id="chart-title" class="text-lg font-bold text-emerald-400 mb-2">📈 Select a Stock</h2>
+                    <div id="chart-container" class="w-full h-72 rounded border border-slate-700 bg-slate-950 flex justify-center items-center text-slate-500">
+                        Click "View Chart" on any stock
+                    </div>
+                </div>
+
+                <!-- Latest News Container -->
+                <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700">
+                    <div class="text-xs font-bold text-slate-400 uppercase mb-1">📰 Top Headline</div>
+                    <p id="news-headline" class="text-xs text-slate-300 italic">Select a stock to view top news story.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart = null;
+
+        function renderStockRows(stocks) {
+            const tableBody = document.getElementById('stock-list');
+            tableBody.innerHTML = '';
+
+            stocks.forEach(stock => {
+                const isHighSpike = stock.traffic_spike_ratio > 1.0;
+                const isMacdBullish = stock.macd_trend.includes('BULLISH');
+                const isVwapBullish = stock.vwap_trend.includes('ABOVE');
+                
+                const row = `
+                    <tr class="border-b border-slate-700/50 hover:bg-slate-700/30 transition cursor-pointer" onclick="loadChart('${stock.symbol}', '${encodeURIComponent(stock.top_headline)}')">
+                        <td class="p-3 font-bold text-white">${stock.symbol}</td>
+                        <td class="p-3">
+                            <div class="font-semibold text-slate-100">₹${stock.price}</div>
+                            <div class="text-[10px] ${isVwapBullish ? 'text-emerald-400' : 'text-red-400'}">VWAP: ₹${stock.vwap}</div>
+                        </td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 rounded text-xs font-bold ${
+                                isHighSpike 
+                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                                : 'bg-slate-700 text-slate-300'
+                            }">
+                                🔥 ${stock.traffic_spike_ratio}x
+                            </span>
+                        </td>
+                        <td class="p-3 text-slate-300 font-semibold text-xs">${stock.rsi}</td>
+                        <td class="p-3 text-xs">
+                            <span class="px-2 py-0.5 rounded font-bold ${
+                                isMacdBullish ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                            }">
+                                ${stock.macd_trend}
+                            </span>
+                        </td>
+                        <td class="p-3 text-xs">
+                            <span class="px-2 py-0.5 rounded font-bold ${
+                                stock.sentiment_label.includes('BULLISH') ? 'bg-emerald-500/20 text-emerald-400' :
+                                stock.sentiment_label.includes('BEARISH') ? 'bg-red-500/20 text-red-400' : 'bg-slate-700 text-slate-300'
+                            }">
+                                ${stock.sentiment_label}
+                            </span>
+                        </td>
+                        <td class="p-3">
+                            <button onclick="loadChart('${stock.symbol}', '${encodeURIComponent(stock.top_headline)}')" class="bg-slate-700 hover:bg-slate-600 text-xs text-emerald-400 px-3 py-1 rounded border border-slate-600">
+                                View
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        async function fetchStocks() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/stocks/high-traffic');
+                const result = await response.json();
+                if (result.status === 'success') {
+                    renderStockRows(result.data);
+                    if (result.data.length > 0) loadChart(result.data[0].symbol, encodeURIComponent(result.data[0].top_headline));
+                }
+            } catch (err) {
+                console.error("Fetch Error:", err);
+            }
+        }
+
+        async function searchCustomStock() {
+            const symbolInput = document.getElementById('search-input').value.trim();
+            if (!symbolInput) return;
+
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/api/stocks/search?symbol=${symbolInput}`);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    renderStockRows([result.data]);
+                    loadChart(result.data.symbol, encodeURIComponent(result.data.top_headline));
+                } else {
+                    alert("Stock not found! Please enter a valid symbol (e.g. WIPRO, ADANIENT).");
+                }
+            } catch (err) {
+                console.error("Search Error:", err);
+            }
+        }
+
+        async function loadChart(symbol, rawNewsHeadline) {
+            document.getElementById('chart-title').innerText = `📈 ${symbol} Chart`;
+            document.getElementById('news-headline').innerText = decodeURIComponent(rawNewsHeadline || "No headline available.");
+            
+            const container = document.getElementById('chart-container');
+            container.innerHTML = '';
+
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/api/stocks/chart?symbol=${symbol}`);
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    chart = LightweightCharts.createChart(container, {
+                        width: container.clientWidth,
+                        height: 280,
+                        layout: { backgroundColor: '#0f172a', textColor: '#94a3b8' },
+                        grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+                        priceScale: { borderColor: '#334155' },
+                        timeScale: { borderColor: '#334155' }
+                    });
+
+                    const candlestickSeries = chart.addCandlestickSeries({
+                        upColor: '#10b981', downColor: '#ef4444',
+                        borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444',
+                    });
+
+                    const formattedData = result.data.map(item => ({
+                        time: item.time, open: item.open, high: item.high, low: item.low, close: item.close
+                    }));
+
+                    candlestickSeries.setData(formattedData);
+                }
+            } catch (err) {
+                console.error("Error loading chart:", err);
+            }
+        }
+
+        fetchStocks();
+    </script>
+</body>
+</html>
