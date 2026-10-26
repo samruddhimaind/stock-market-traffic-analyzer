@@ -3,25 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Institutional Stock & Technical Analyzer</title>
+    <title>Stock Traffic & Technical Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
 </head>
-<body class="bg-slate-900 text-white min-h-screen p-6">
-    <div class="max-w-7xl mx-auto space-y-6">
-        
-        <!-- Header & Search Bar -->
-        <div class="flex flex-col md:flex-row justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 gap-4">
+<body class="bg-slate-900 text-white min-h-screen flex flex-col justify-center items-center p-4">
+
+    <!-- ========================================== -->
+    <!-- SCREEN 1: AUTH GATEWAY (Logged Out View)   -->
+    <!-- ========================================== -->
+    <div id="auth-container" class="w-full max-w-md bg-slate-800 border border-slate-700 p-8 rounded-2xl shadow-2xl space-y-6">
+        <div class="text-center space-y-2">
+            <h1 class="text-3xl font-bold text-emerald-400">📊 StockAnalyzer</h1>
+            <p class="text-slate-400 text-xs">Institutional Traffic Scanner, RSI Signals & AI Sentiment</p>
+        </div>
+
+        <div class="flex border-b border-slate-700 text-sm font-semibold text-center">
+            <button id="tab-btn-login" onclick="setAuthMode('login')" class="w-1/2 py-2 text-emerald-400 border-b-2 border-emerald-400">Login</button>
+            <button id="tab-btn-register" onclick="setAuthMode('register')" class="w-1/2 py-2 text-slate-400 hover:text-white">Sign Up</button>
+        </div>
+
+        <form onsubmit="event.preventDefault(); submitAuth();" class="space-y-4">
             <div>
-                <h1 class="text-2xl font-bold text-emerald-400">📊 Advanced Technical & Traffic Screener</h1>
-                <p class="text-slate-400 text-xs">Volume Spikes, RSI, MACD Crossovers, VWAP & AI Sentiment</p>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">USERNAME</label>
+                <input id="auth-username" type="text" placeholder="Enter username" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" required>
+            </div>
+
+            <div id="email-group" class="hidden">
+                <label class="block text-xs font-semibold text-slate-400 mb-1">EMAIL ADDRESS</label>
+                <input id="auth-email" type="email" placeholder="name@example.com" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">PASSWORD</label>
+                <input id="auth-password" type="password" placeholder="••••••••" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500" required>
+            </div>
+
+            <button id="auth-submit-btn" type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 py-2.5 rounded-lg font-bold transition text-sm text-slate-950 shadow-lg shadow-emerald-500/20">
+                Login to Dashboard
+            </button>
+        </form>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- SCREEN 2: MAIN DASHBOARD (Logged In View)  -->
+    <!-- ========================================== -->
+    <div id="dashboard-container" class="hidden w-full max-w-7xl space-y-6">
+        
+        <!-- Top Navigation Bar -->
+        <div class="flex flex-col md:flex-row justify-between items-center bg-slate-800 p-4 rounded-xl border border-slate-700 gap-4 shadow-lg">
+            <div>
+                <h1 class="text-2xl font-bold text-emerald-400">📊 Stock Volume & AI Sentiment Scanner</h1>
+                <p class="text-slate-400 text-xs">Real-time Volume Spikes, RSI, News Sentiment & Personal Watchlist</p>
             </div>
             
-            <div class="flex items-center gap-2 w-full md:w-auto">
-                <input id="search-input" type="text" placeholder="Enter Ticker (e.g. WIPRO, ZOMATO)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 w-full md:w-64 uppercase">
-                <button onclick="searchCustomStock()" class="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg text-sm font-semibold transition">
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <input id="search-input" type="text" placeholder="Enter Ticker (e.g. WIPRO, ETERNAL)" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 w-full md:w-64 uppercase">
+                <button onclick="searchCustomStock()" class="bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-4 py-2 rounded-lg text-sm font-bold transition">
                     Search
                 </button>
+                
+                <div class="flex items-center gap-3 pl-3 border-l border-slate-700">
+                    <span id="user-display" class="text-xs text-emerald-400 font-bold"></span>
+                    <button onclick="logout()" class="bg-red-500/20 text-red-400 hover:bg-red-500/30 text-xs px-3 py-2 rounded-lg font-semibold border border-red-500/30">
+                        Logout
+                    </button>
+                    <button onclick="playAlertChime(); alert('🔊 Sound & Alert System Working Perfectly!');" class="bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 text-xs px-3 py-2 rounded-lg font-semibold border border-yellow-500/30">
+    🔊 Test Sound
+</button>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- PHASE 7: Sectoral Heatmap Banner -->
+        <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl shadow-lg space-y-2">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">🔥 Sectoral Heatmap Overview</h2>
+                <span class="text-xs text-slate-500">Live Index Momentum</span>
+            </div>
+            <div id="sector-heatmap-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-700 text-center animate-pulse text-xs text-slate-500">Loading Sectors...</div>
             </div>
         </div>
 
@@ -29,43 +91,86 @@
             <!-- Table Section -->
             <div class="lg:col-span-2 bg-slate-800 rounded-xl overflow-hidden shadow-xl border border-slate-700">
                 <div class="p-4 bg-slate-700/40 border-b border-slate-700 font-semibold text-slate-300 flex justify-between items-center">
-                    <span>🔥 Institutional Technical Matrix</span>
-                    <button onclick="fetchStocks()" class="text-xs text-emerald-400 hover:underline">🔄 Reset Screener</button>
+                    <div class="flex gap-4 text-sm">
+                        <button id="tab-all" onclick="switchTab('all')" class="text-emerald-400 font-bold border-b-2 border-emerald-400 pb-1">🔥 Top Scanner</button>
+                        <button id="tab-watchlist" onclick="switchTab('watchlist')" class="text-slate-400 hover:text-white pb-1">⭐ My Saved Watchlist</button>
+                    </div>
+                    <button onclick="refreshCurrentTab()" class="text-xs text-emerald-400 hover:underline">🔄 Refresh</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
                         <thead class="bg-slate-700/50 text-slate-300 text-xs uppercase">
                             <tr>
                                 <th class="p-3">Symbol</th>
-                                <th class="p-3">Price / VWAP</th>
-                                <th class="p-3">Traffic</th>
+                                <th class="p-3">Price (₹)</th>
+                                <th class="p-3">Traffic Ratio</th>
                                 <th class="p-3">RSI</th>
-                                <th class="p-3">MACD Trend</th>
-                                <th class="p-3">AI Sentiment</th>
+                                <th class="p-3">News Sentiment</th>
                                 <th class="p-3">Action</th>
                             </tr>
                         </thead>
                         <tbody id="stock-list" class="text-sm">
                             <tr>
-                                <td colspan="7" class="p-6 text-center text-slate-400">Calculating technical indicators...</td>
+                                <td colspan="6" class="p-6 text-center text-slate-400">Loading metrics...</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Chart & News Details Section -->
-            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col gap-4">
+            <!-- Chart & Details Section -->
+            <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col gap-4 shadow-xl">
                 <div>
-                    <h2 id="chart-title" class="text-lg font-bold text-emerald-400 mb-2">📈 Select a Stock</h2>
+                    <!-- PHASE 7: Chart Header with Multi-Timeframe Selector -->
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 id="chart-title" class="text-lg font-bold text-emerald-400">📈 Select a Stock</h2>
+                        <div class="flex gap-1 text-xs">
+                            <button onclick="changeTimeframe('1mo')" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-slate-300 font-semibold">1M</button>
+                            <button onclick="changeTimeframe('3mo')" class="bg-emerald-500/20 text-emerald-400 px-2 py-1 rounded font-semibold border border-emerald-500/30">3M</button>
+                            <button onclick="changeTimeframe('6mo')" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-slate-300 font-semibold">6M</button>
+                            <button onclick="changeTimeframe('1y')" class="bg-slate-700 hover:bg-slate-600 px-2 py-1 rounded text-slate-300 font-semibold">1Y</button>
+                        </div>
+                    </div>
                     <div id="chart-container" class="w-full h-72 rounded border border-slate-700 bg-slate-950 flex justify-center items-center text-slate-500">
-                        Click "View Chart" on any stock
+                        Click "View Details" on any stock
                     </div>
                 </div>
 
-                <!-- Latest News Container -->
+                <!-- AI Executive Insight Card -->
+                <div class="bg-slate-900/90 p-4 rounded-xl border border-emerald-500/30 shadow-lg space-y-2">
+                    <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                        <span>🤖 AI Executive Insight</span>
+                    </div>
+                    <p id="ai-insight-text" class="text-xs text-slate-300 leading-relaxed italic">
+                        Select any stock to generate real-time AI technical insight...
+                    </p>
+                </div>
+
+                <!-- Strategy Backtest Scorecard -->
+<div class="bg-slate-900/90 p-4 rounded-xl border border-blue-500/30 shadow-lg space-y-2">
+    <div class="flex justify-between items-center text-blue-400 font-bold text-xs uppercase tracking-wider">
+        <span>📊 6-Month Backtest Accuracy</span>
+        <span id="backtest-target" class="text-slate-400 text-[10px] lowercase">target: +3% in 5 days</span>
+    </div>
+    <div class="grid grid-cols-3 gap-2 text-center pt-1">
+        <div class="bg-slate-800 p-2 rounded border border-slate-700">
+            <div class="text-[10px] text-slate-400 font-semibold uppercase">Win Rate</div>
+            <div id="backtest-win-rate" class="text-sm font-bold text-emerald-400">--%</div>
+        </div>
+        <div class="bg-slate-800 p-2 rounded border border-slate-700">
+            <div class="text-[10px] text-slate-400 font-semibold uppercase">Signals</div>
+            <div id="backtest-signals" class="text-sm font-bold text-slate-200">--</div>
+        </div>
+        <div class="bg-slate-800 p-2 rounded border border-slate-700">
+            <div class="text-[10px] text-slate-400 font-semibold uppercase">Avg Return</div>
+            <div id="backtest-avg-return" class="text-sm font-bold text-emerald-400">--%</div>
+        </div>
+    </div>
+</div>
+
+                <!-- News Headline -->
                 <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-700">
-                    <div class="text-xs font-bold text-slate-400 uppercase mb-1">📰 Top Headline</div>
+                    <div class="text-xs font-bold text-slate-400 uppercase mb-1">📰 Top News Headline</div>
                     <p id="news-headline" class="text-xs text-slate-300 italic">Select a stock to view top news story.</p>
                 </div>
             </div>
@@ -74,58 +179,227 @@
 
     <script>
         let chart = null;
+        let currentTab = 'all';
+        let authToken = localStorage.getItem('access_token') || null;
+        let authUsername = localStorage.getItem('username') || null;
+        let activeAuthMode = 'login';
+        let selectedPeriod = '3mo';
+        let currentActiveSymbol = 'INFY';
+
+        function checkAuthView() {
+            const authContainer = document.getElementById('auth-container');
+            const dashboardContainer = document.getElementById('dashboard-container');
+            const userDisplay = document.getElementById('user-display');
+
+            if (authToken && authUsername) {
+                authContainer.classList.add('hidden');
+                dashboardContainer.classList.remove('hidden');
+                userDisplay.innerText = `👤 ${authUsername}`;
+                document.body.className = "bg-slate-900 text-white min-h-screen p-6";
+                fetchSectorHeatmap();
+                fetchStocks();
+            } else {
+                dashboardContainer.classList.add('hidden');
+                authContainer.classList.remove('hidden');
+                document.body.className = "bg-slate-900 text-white min-h-screen flex flex-col justify-center items-center p-4";
+            }
+        }
+
+        async function fetchSectorHeatmap() {
+            const gridContainer = document.getElementById('sector-heatmap-grid');
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/sectors/heatmap');
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    gridContainer.innerHTML = '';
+                    result.data.forEach(item => {
+                        const isPositive = item.change_pct >= 0;
+                        const card = `
+                            <div class="p-3 rounded-lg border text-center transition hover:scale-105 ${
+                                isPositive 
+                                ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400' 
+                                : 'bg-red-950/40 border-red-500/40 text-red-400'
+                            }">
+                                <div class="text-xs font-bold truncate text-slate-200">${item.sector}</div>
+                                <div class="text-sm font-extrabold mt-1">
+                                    ${isPositive ? '+' : ''}${item.change_pct}%
+                                </div>
+                            </div>
+                        `;
+                        gridContainer.innerHTML += card;
+                    });
+                }
+            } catch (err) {
+                console.error("Heatmap Fetch Error:", err);
+            }
+        }
+
+        function changeTimeframe(period) {
+            selectedPeriod = period;
+            if (currentActiveSymbol) {
+                loadChart(currentActiveSymbol, "");
+            }
+        }
+
+        function setAuthMode(mode) {
+            activeAuthMode = mode;
+            const tabLogin = document.getElementById('tab-btn-login');
+            const tabRegister = document.getElementById('tab-btn-register');
+            const emailGroup = document.getElementById('email-group');
+            const submitBtn = document.getElementById('auth-submit-btn');
+
+            if (mode === 'register') {
+                tabRegister.className = "w-1/2 py-2 text-emerald-400 border-b-2 border-emerald-400";
+                tabLogin.className = "w-1/2 py-2 text-slate-400 hover:text-white";
+                emailGroup.classList.remove('hidden');
+                submitBtn.innerText = "Create Free Account";
+            } else {
+                tabLogin.className = "w-1/2 py-2 text-emerald-400 border-b-2 border-emerald-400";
+                tabRegister.className = "w-1/2 py-2 text-slate-400 hover:text-white";
+                emailGroup.classList.add('hidden');
+                submitBtn.innerText = "Login to Dashboard";
+            }
+        }
+
+        async function submitAuth() {
+            const usernameInput = document.getElementById('auth-username');
+            const passwordInput = document.getElementById('auth-password');
+            const emailInput = document.getElementById('auth-email');
+
+            const username = usernameInput ? usernameInput.value.trim() : '';
+            const password = passwordInput ? passwordInput.value.trim() : '';
+            const email = emailInput ? emailInput.value.trim() : '';
+
+            if (!username || !password) {
+                alert("Please fill in Username and Password.");
+                return;
+            }
+
+            if (activeAuthMode === 'register') {
+                if (!email) {
+                    alert("Please fill in your Email address.");
+                    return;
+                }
+                try {
+                    const res = await fetch('http://127.0.0.1:8000/api/auth/register', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ username, email, password })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        localStorage.setItem('access_token', data.access_token);
+                        localStorage.setItem('username', data.username);
+                        authToken = data.access_token;
+                        authUsername = data.username;
+                        alert("Account created successfully!");
+                        checkAuthView();
+                    } else {
+                        alert(data.detail || "Registration failed.");
+                    }
+                } catch (err) {
+                    console.error("Auth Error:", err);
+                    alert("Failed to connect to backend server. Please verify uvicorn is running.");
+                }
+            } else {
+                const formData = new URLSearchParams();
+                formData.append('username', username);
+                formData.append('password', password);
+
+                try {
+                    const res = await fetch('http://127.0.0.1:8000/api/auth/login', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        localStorage.setItem('access_token', data.access_token);
+                        localStorage.setItem('username', data.username);
+                        authToken = data.access_token;
+                        authUsername = data.username;
+                        alert("Login successful!");
+                        checkAuthView();
+                    } else {
+                        alert(data.detail || "Invalid credentials.");
+                    }
+                } catch (err) {
+                    console.error("Auth Error:", err);
+                    alert("Failed to connect to backend server. Please verify uvicorn is running.");
+                }
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('username');
+            authToken = null;
+            authUsername = null;
+            checkAuthView();
+        }
+
+        async function addToWatchlist(symbol) {
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/user/watchlist/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ symbol })
+                });
+                const data = await res.json();
+                alert(data.message);
+            } catch (err) { console.error(err); }
+        }
 
         function renderStockRows(stocks) {
-            const tableBody = document.getElementById('stock-list');
-            tableBody.innerHTML = '';
+    const tableBody = document.getElementById('stock-list');
+    tableBody.innerHTML = '';
 
-            stocks.forEach(stock => {
-                const isHighSpike = stock.traffic_spike_ratio > 1.0;
-                const isMacdBullish = stock.macd_trend.includes('BULLISH');
-                const isVwapBullish = stock.vwap_trend.includes('ABOVE');
-                
-                const row = `
-                    <tr class="border-b border-slate-700/50 hover:bg-slate-700/30 transition cursor-pointer" onclick="loadChart('${stock.symbol}', '${encodeURIComponent(stock.top_headline)}')">
-                        <td class="p-3 font-bold text-white">${stock.symbol}</td>
-                        <td class="p-3">
-                            <div class="font-semibold text-slate-100">₹${stock.price}</div>
-                            <div class="text-[10px] ${isVwapBullish ? 'text-emerald-400' : 'text-red-400'}">VWAP: ₹${stock.vwap}</div>
-                        </td>
-                        <td class="p-3">
-                            <span class="px-2 py-1 rounded text-xs font-bold ${
-                                isHighSpike 
-                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                                : 'bg-slate-700 text-slate-300'
-                            }">
-                                🔥 ${stock.traffic_spike_ratio}x
-                            </span>
-                        </td>
-                        <td class="p-3 text-slate-300 font-semibold text-xs">${stock.rsi}</td>
-                        <td class="p-3 text-xs">
-                            <span class="px-2 py-0.5 rounded font-bold ${
-                                isMacdBullish ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                            }">
-                                ${stock.macd_trend}
-                            </span>
-                        </td>
-                        <td class="p-3 text-xs">
-                            <span class="px-2 py-0.5 rounded font-bold ${
-                                stock.sentiment_label.includes('BULLISH') ? 'bg-emerald-500/20 text-emerald-400' :
-                                stock.sentiment_label.includes('BEARISH') ? 'bg-red-500/20 text-red-400' : 'bg-slate-700 text-slate-300'
-                            }">
-                                ${stock.sentiment_label}
-                            </span>
-                        </td>
-                        <td class="p-3">
-                            <button onclick="loadChart('${stock.symbol}', '${encodeURIComponent(stock.top_headline)}')" class="bg-slate-700 hover:bg-slate-600 text-xs text-emerald-400 px-3 py-1 rounded border border-slate-600">
-                                View
-                            </button>
-                        </td>
-                    </tr>
-                `;
-                tableBody.innerHTML += row;
-            });
-        }
+    if (stocks.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">No stocks found.</td></tr>`;
+        return;
+    }
+
+    stocks.forEach(stock => {
+        const isHighSpike = stock.traffic_spike_ratio > 1.0;
+        
+        const row = `
+            <tr class="border-b border-slate-700/50 hover:bg-slate-700/30 transition cursor-pointer" onclick="loadChart('${stock.symbol}', '${encodeURIComponent(stock.top_headline)}')">
+                <td class="p-3 font-bold text-white flex items-center gap-2">
+                    <span>${stock.symbol}</span>
+                    <button onclick="event.stopPropagation(); addToWatchlist('${stock.symbol}')" title="Save to Watchlist" class="text-xs text-yellow-400 hover:scale-125 transition">⭐</button>
+                </td>
+                <td class="p-3 font-semibold text-slate-200">₹${stock.price}</td>
+                <td class="p-3">
+                    <span class="px-2 py-1 rounded text-xs font-bold ${
+                        isHighSpike ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-300'
+                    }">🔥 ${stock.traffic_spike_ratio}x</span>
+                </td>
+                <td class="p-3 text-slate-300 font-semibold">${stock.rsi}</td>
+                <td class="p-3 text-xs">
+                    <span class="px-2 py-1 rounded font-bold ${
+                        stock.sentiment_label.includes('BULLISH') ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                        stock.sentiment_label.includes('BEARISH') ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-slate-700 text-slate-300'
+                    }">${stock.sentiment_label} (${stock.sentiment_score})</span>
+                </td>
+                <td class="p-3 flex gap-2">
+                    <button onclick="loadChart('${stock.symbol}', '${encodeURIComponent(stock.top_headline)}')" class="bg-slate-700 hover:bg-slate-600 text-xs text-emerald-400 px-3 py-1 rounded border border-slate-600">
+                        View Details
+                    </button>
+                    ${currentTab === 'watchlist' ? `
+                        <button onclick="event.stopPropagation(); removeFromWatchlist('${stock.symbol}')" class="bg-red-500/20 hover:bg-red-500/30 text-xs text-red-400 px-2 py-1 rounded border border-red-500/30 font-semibold">
+                            🗑️ Remove
+                        </button>
+                    ` : ''}
+                </td>
+            </tr>
+        `;
+        tableBody.innerHTML += row;
+    });
+}
 
         async function fetchStocks() {
             try {
@@ -135,9 +409,41 @@
                     renderStockRows(result.data);
                     if (result.data.length > 0) loadChart(result.data[0].symbol, encodeURIComponent(result.data[0].top_headline));
                 }
-            } catch (err) {
-                console.error("Fetch Error:", err);
+            } catch (err) { console.error(err); }
+        }
+
+        async function fetchWatchlist() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/user/watchlist', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    renderStockRows(result.data);
+                    if (result.data.length > 0) loadChart(result.data[0].symbol, encodeURIComponent(result.data[0].top_headline));
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            const tabAll = document.getElementById('tab-all');
+            const tabWatchlist = document.getElementById('tab-watchlist');
+
+            if (tab === 'all') {
+                tabAll.className = "text-emerald-400 font-bold border-b-2 border-emerald-400 pb-1";
+                tabWatchlist.className = "text-slate-400 hover:text-white pb-1";
+                fetchStocks();
+            } else {
+                tabWatchlist.className = "text-emerald-400 font-bold border-b-2 border-emerald-400 pb-1";
+                tabAll.className = "text-slate-400 hover:text-white pb-1";
+                fetchWatchlist();
             }
+        }
+
+        function refreshCurrentTab() {
+            if (currentTab === 'all') fetchStocks();
+            else fetchWatchlist();
         }
 
         async function searchCustomStock() {
@@ -152,22 +458,49 @@
                     renderStockRows([result.data]);
                     loadChart(result.data.symbol, encodeURIComponent(result.data.top_headline));
                 } else {
-                    alert("Stock not found! Please enter a valid symbol (e.g. WIPRO, ADANIENT).");
+                    alert("Stock not found! Please enter a valid symbol (e.g. WIPRO, ETERNAL).");
                 }
-            } catch (err) {
-                console.error("Search Error:", err);
-            }
+            } catch (err) { console.error(err); }
         }
 
         async function loadChart(symbol, rawNewsHeadline) {
-            document.getElementById('chart-title').innerText = `📈 ${symbol} Chart`;
-            document.getElementById('news-headline').innerText = decodeURIComponent(rawNewsHeadline || "No headline available.");
+            currentActiveSymbol = symbol;
+            document.getElementById('chart-title').innerText = `📈 ${symbol} Chart (${selectedPeriod.toUpperCase()})`;
+            if (rawNewsHeadline) {
+                document.getElementById('news-headline').innerText = decodeURIComponent(rawNewsHeadline);
+            }
+            document.getElementById('ai-insight-text').innerText = "Generating AI Trade Insight...";
             
+            // Fetch Strategy Backtest Data
+try {
+    const btRes = await fetch(`http://127.0.0.1:8000/api/stocks/backtest?symbol=${symbol}`);
+    const btData = await btRes.json();
+    if (btData.status === 'success') {
+        document.getElementById('backtest-win-rate').innerText = `${btData.win_rate}%`;
+        document.getElementById('backtest-signals').innerText = btData.total_signals;
+        document.getElementById('backtest-avg-return').innerText = `${btData.avg_return}%`;
+    }
+} catch (err) {
+    console.error("Backtest Fetch Error:", err);
+}
+
+            // Fetch AI Insight
+            try {
+                const aiRes = await fetch(`http://127.0.0.1:8000/api/stocks/ai-insight?symbol=${symbol}`);
+                const aiData = await aiRes.json();
+                if (aiData.status === 'success') {
+                    document.getElementById('ai-insight-text').innerText = aiData.ai_insight;
+                }
+            } catch (err) {
+                document.getElementById('ai-insight-text').innerText = "Unable to load AI insight.";
+            }
+
+            // Load Candlestick Chart
             const container = document.getElementById('chart-container');
             container.innerHTML = '';
 
             try {
-                const response = await fetch(`http://127.0.0.1:8000/api/stocks/chart?symbol=${symbol}`);
+                const response = await fetch(`http://127.0.0.1:8000/api/stocks/chart?symbol=${symbol}&period=${selectedPeriod}`);
                 const result = await response.json();
 
                 if (result.status === 'success') {
@@ -191,12 +524,76 @@
 
                     candlestickSeries.setData(formattedData);
                 }
-            } catch (err) {
-                console.error("Error loading chart:", err);
-            }
+            } catch (err) { console.error(err); }
         }
 
-        fetchStocks();
+        checkAuthView();
+
+        // Web Audio API Synthesizer (No External MP3 File Required)
+function playAlertChime() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // High pitch D5 note
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5 note
+
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+    } catch (e) {
+        console.error("Audio Playback Error:", e);
+    }
+}
+
+async function pollCustomAlerts() {
+    if (!authToken) return;
+    try {
+        const res = await fetch('http://127.0.0.1:8000/api/user/alerts/check', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+        });
+        const data = await res.json();
+        if (data.status === 'success' && data.triggered_count > 0) {
+            playAlertChime();
+            data.alerts.forEach(alertItem => {
+                alert(`🚨 ALERT TRIGGERED: ${alertItem.symbol}\n${alertItem.message}`);
+            });
+        }
+    } catch (err) {
+        console.error("Alert Polling Error:", err);
+    }
+}
+
+// Automatically check custom alert rules every 30 seconds
+setInterval(pollCustomAlerts, 30000);
+
+async function removeFromWatchlist(symbol) {
+    try {
+        const res = await fetch(`http://127.0.0.1:8000/api/user/watchlist/remove?symbol=${symbol}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        const data = await res.json();
+        if (res.ok) {
+            alert(data.message);
+            refreshCurrentTab();
+        } else {
+            alert(data.detail || "Failed to remove stock.");
+        }
+    } catch (err) {
+        console.error("Remove Watchlist Error:", err);
+    }
+}
+
     </script>
 </body>
 </html>

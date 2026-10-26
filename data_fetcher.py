@@ -12,35 +12,9 @@ except LookupError:
 
 sia = SentimentIntensityAnalyzer()
 
+# Fast In-Memory Cache Dictionary
 CACHE_STORE = {}
-CACHE_TTL_SECONDS = 60
-
-# ==========================================
-# STEP 2: TELEGRAM CREDENTIALS SETUP HERE
-# ==========================================
-TELEGRAM_BOT_TOKEN = "8660964856:AAFE63n6q2wiWw7weMaoUKoqkaZbXCtEggs"  # <-- Yahan `@BotFather` waala Token daalein
-TELEGRAM_CHAT_ID = "1768683460"               # <-- Yahan `@userinfobot` waali ID daalein
-
-def send_telegram_alert(message: str):
-    """Telegram Bot API se Instant Alert message bhejta hai"""
-    if TELEGRAM_BOT_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN_HERE" or not TELEGRAM_BOT_TOKEN:
-        print("⚠️ Telegram Credentials Configuration Pending.")
-        return
-
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": message,
-        "parse_mode": "Markdown"
-    }
-    try:
-        response = requests.post(url, json=payload, timeout=5)
-        if response.status_code == 200:
-            print("✅ Telegram Alert Sent Successfully!")
-        else:
-            print(f"❌ Telegram API Error: {response.text}")
-    except Exception as e:
-        print(f"❌ Failed to send Telegram alert: {e}")
+CACHE_TTL_SECONDS = 60  # Cache expires every 60 seconds
 
 DEFAULT_SYMBOLS = [
     'RELIANCE.NS', 
@@ -72,25 +46,34 @@ def calculate_vwap(hist_df):
     return vwap
 
 def fetch_stock_news_sentiment(symbol_raw: str):
+    """
+    Fetches news headlines from Yahoo Finance and calculates Sentiment Score.
+    """
     try:
         ticker = yf.Ticker(symbol_raw)
         news = ticker.news
         headlines = []
+        
         if news:
             for item in news[:5]:
-                title = item.get('title') or item.get('content', {}).get('title', '')
+                title = ""
+                if isinstance(item, dict):
+                    title = item.get('title') or item.get('content', {}).get('title', '')
+                elif hasattr(item, 'title'):
+                    title = item.title
+
                 if title:
                     headlines.append(title)
         
         if not headlines:
-            return {"sentiment_score": 0.0, "label": "NEUTRAL", "top_news": "No recent news available"}
+            return {"sentiment_score": 0.0, "label": "NEUTRAL ⚪", "top_news": "No recent headlines available"}
         
         scores = [sia.polarity_scores(text)['compound'] for text in headlines]
         avg_score = round(sum(scores) / len(scores), 2)
         
-        if avg_score >= 0.15:
+        if avg_score >= 0.05:
             label = "BULLISH 🟢"
-        elif avg_score <= -0.15:
+        elif avg_score <= -0.05:
             label = "BEARISH 🔴"
         else:
             label = "NEUTRAL ⚪"
@@ -101,9 +84,11 @@ def fetch_stock_news_sentiment(symbol_raw: str):
             "top_news": headlines[0]
         }
     except Exception as e:
-        return {"sentiment_score": 0.0, "label": "NEUTRAL", "top_news": "N/A"}
+        print(f"Sentiment analysis error for {symbol_raw}: {e}")
+        return {"sentiment_score": 0.0, "label": "NEUTRAL ⚪", "top_news": "N/A"}
 
 def fetch_stock_summary(symbol: str):
+    symbol = symbol.strip().upper()
     if not symbol.endswith(".NS"):
         symbol = f"{symbol}.NS"
 
@@ -160,19 +145,6 @@ def fetch_stock_summary(symbol: str):
         "day_low": round(latest_data['Low'], 2)
     }
 
-    # High Traffic Spike (>1.2x) par Automatic Telegram Alert trigger hoga
-    if volume_ratio >= 1.2:
-        alert_msg = (
-            f"🚨 *HIGH TRAFFIC SPIKE DETECTED* 🚨\n\n"
-            f"📈 *Stock*: {result['symbol']}\n"
-            f"💰 *Price*: ₹{result['price']}\n"
-            f"🔥 *Traffic Ratio*: {volume_ratio}x Normal Volume\n"
-            f"📊 *RSI*: {rsi_val}\n"
-            f"⚡ *MACD*: {macd_signal_text}\n"
-            f"📰 *Sentiment*: {sentiment_data['label']}\n"
-        )
-        send_telegram_alert(alert_msg)
-
     CACHE_STORE[symbol] = {
         "timestamp": current_time,
         "data": result
@@ -192,7 +164,53 @@ def get_high_traffic_stocks(symbols=DEFAULT_SYMBOLS):
             
     return sorted(stock_data_list, key=lambda x: x['traffic_spike_ratio'], reverse=True)
 
+# Major NSE Sector Indices Tickers on Yahoo Finance
+SECTOR_MAP = {
+    "NIFTY BANK": "^NSEBANK",
+    "NIFTY IT": "^CNXIT",
+    "NIFTY AUTO": "^CNXAUTO",
+    "NIFTY FMCG": "^CNXFMCG",
+    "NIFTY PHARMA": "^CNXPHARMA",
+    "NIFTY ENERGY": "^CNXENERGY"
+}
+
+def fetch_sector_heatmaps():
+    """
+    Fetches real-time percentage performance for top NSE Sectoral Indices.
+    """
+    sector_results = []
+    
+    for sector_name, ticker_symbol in SECTOR_MAP.items():
+        try:
+            ticker = yf.Ticker(ticker_symbol)
+            hist = ticker.history(period="5d")
+            
+            if not hist.empty and len(hist) >= 2:
+                latest_close = hist['Close'].iloc[-1]
+                prev_close = hist['Close'].iloc[-2]
+                pct_change = round(((latest_close - prev_close) / prev_close) * 100, 2)
+            else:
+                pct_change = 0.0
+
+            sector_results.append({
+                "sector": sector_name,
+                "change_pct": pct_change,
+                "status": "BULLISH" if pct_change >= 0 else "BEARISH"
+            })
+        except Exception as e:
+            print(f"Error fetching sector {sector_name}: {e}")
+            sector_results.append({
+                "sector": sector_name,
+                "change_pct": 0.0,
+                "status": "NEUTRAL"
+            })
+            
+    return sector_results
+
 def fetch_stock_chart_data(symbol: str, period="3mo"):
+    """
+    Updated chart fetcher to support multi-timeframe periods: 1mo, 3mo, 6mo, 1y.
+    """
     if not symbol.endswith(".NS"):
         symbol = f"{symbol}.NS"
         
