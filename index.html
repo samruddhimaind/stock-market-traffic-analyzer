@@ -271,73 +271,73 @@
         }
 
         async function submitAuth() {
-            const usernameInput = document.getElementById('auth-username');
-            const passwordInput = document.getElementById('auth-password');
-            const emailInput = document.getElementById('auth-email');
+    const usernameInput = document.getElementById('auth-username');
+    const passwordInput = document.getElementById('auth-password');
+    const emailInput = document.getElementById('auth-email');
 
-            const username = usernameInput ? usernameInput.value.trim() : '';
-            const password = passwordInput ? passwordInput.value.trim() : '';
-            const email = emailInput ? emailInput.value.trim() : '';
+    const username = usernameInput ? usernameInput.value.trim() : '';
+    const password = passwordInput ? passwordInput.value.trim() : '';
+    const email = emailInput ? emailInput.value.trim() : '';
 
-            if (!username || !password) {
-                alert("Please fill in Username and Password.");
-                return;
-            }
+    if (!username || !password) {
+        alert("Kripya Username aur Password bharein!");
+        return;
+    }
 
-            if (activeAuthMode === 'register') {
-                if (!email) {
-                    alert("Please fill in your Email address.");
-                    return;
-                }
-                try {
-                    const res = await fetch(`${BASE_URL}/api/auth/register`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ username, email, password })
-                    });
-                    const data = await res.json();
-                    if (res.ok) {
-                        localStorage.setItem('access_token', data.access_token);
-                        localStorage.setItem('username', data.username);
-                        authToken = data.access_token;
-                        authUsername = data.username;
-                        alert("Account created successfully!");
-                        checkAuthView();
-                    } else {
-                        alert(data.detail || "Registration failed.");
-                    }
-                } catch (err) {
-                    console.error("Auth Error:", err);
-                    alert("Failed to connect to backend server.");
-                }
-            } else {
-                const formData = new URLSearchParams();
-                formData.append('username', username);
-                formData.append('password', password);
-
-                try {
-                    const res = await fetch(`${BASE_URL}/api/auth/login`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                        body: formData
-                    });
-                    const data = await res.json();
-                    if (res.ok) {
-                        localStorage.setItem('access_token', data.access_token);
-                        localStorage.setItem('username', data.username);
-                        authToken = data.access_token;
-                        authUsername = data.username;
-                        alert("Login successful!");
-                        checkAuthView();
-                    } else {
-                        alert(data.detail || "Invalid credentials.");
-                    }
-                } catch (err) {
-                    console.error("Auth Error:", err);
-                    alert("Failed to connect to backend server.");
-                }
-            }
+    if (activeAuthMode === 'register') {
+        if (!email) {
+            alert("Kripya Email address bharein!");
+            return;
         }
+        try {
+            const res = await fetch(`${BASE_URL}/api/auth/register`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username, email, password })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('username', data.username);
+                authToken = data.access_token;
+                authUsername = data.username;
+                alert("Account successfully create ho gaya!");
+                checkAuthView();
+            } else {
+                alert(data.detail || "Registration fail ho gaya.");
+            }
+        } catch (err) {
+            console.error("Auth Error:", err);
+            alert("Backend server se connect nahi ho paya. Please try again.");
+        }
+    } else {
+        const formData = new URLSearchParams();
+        formData.append('username', username);
+        formData.append('password', password);
+
+        try {
+            const res = await fetch(`${BASE_URL}/api/auth/login`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('username', data.username);
+                authToken = data.access_token;
+                authUsername = data.username;
+                alert("Login Successful!");
+                checkAuthView();
+            } else {
+                alert(data.detail || "Galat username ya password!");
+            }
+        } catch (err) {
+            console.error("Auth Error:", err);
+            alert("Backend server se connect nahi ho paya. Please try again.");
+        }
+    }
+}
 
         function logout() {
             localStorage.removeItem('access_token');
