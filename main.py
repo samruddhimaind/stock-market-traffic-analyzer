@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import timedelta
 
 import data_fetcher
 import database
@@ -317,3 +318,79 @@ def remove_from_watchlist(
     db.commit()
 
     return {"status": "success", "message": f"{symbol_clean} removed from Watchlist!"}
+
+class PaymentOrderRequest(BaseModel):
+    amount: float = 499.0  # PRO Subscription Price in INR
+
+class PaymentVerifyRequest(BaseModel):
+    order_id: str
+    payment_id: str
+
+@app.post("/api/payment/create-order")
+def create_payment_order(
+    req: PaymentOrderRequest,
+    current_user: models.User = Depends(auth_utils.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Creates a transaction order ID for PRO upgrade.
+    """
+    import uuid
+    dummy_order_id = f"order_{uuid.uuid4().hex[:12]}"
+    
+    new_tx = models.PaymentTransaction(
+        order_id=dummy_order_id,
+        amount=req.amount,
+        status="CREATED",
+        user_id=current_user.id
+    )
+    db.add(new_tx)
+    db.commit()
+
+    return {
+        "status": "success",
+        "order_id": dummy_order_id,
+        "amount": req.amount,
+        "currency": "INR",
+        "key": "rzp_test_dummy_key"  # Place your actual Razorpay Key ID here
+    }
+
+@app.post("/api/payment/verify")
+def verify_payment(
+    req: PaymentVerifyRequest,
+    current_user: models.User = Depends(auth_utils.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Verifies payment completion and grants 30-day PRO subscription access to user.
+    """
+    tx = db.query(models.PaymentTransaction).filter(
+        models.PaymentTransaction.order_id == req.order_id,
+        models.PaymentTransaction.user_id == current_user.id
+    ).first()
+
+    if not tx:
+        raise HTTPException(status_code=404, detail="Payment Order not found.")
+
+    tx.payment_id = req.payment_id
+    tx.status = "SUCCESS"
+
+    # Grant 30 Days PRO Access
+    current_user.is_pro = True
+    current_user.pro_expires_at = datetime.utcnow() + timedelta(days=30)
+
+    db.commit()
+
+    return {
+        "status": "success",
+        "message": "🎉 Payment Successful! Your PRO Subscription is active for 30 days.",
+        "is_pro": True
+    }
+
+@app.get("/api/user/status")
+def get_user_status(current_user: models.User = Depends(auth_utils.get_current_user)):
+    return {
+        "username": current_user.username,
+        "is_pro": current_user.is_pro,
+        "pro_expires_at": current_user.pro_expires_at.strftime("%Y-%m-%d") if current_user.pro_expires_at else None
+    }

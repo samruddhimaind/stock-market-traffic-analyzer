@@ -12,8 +12,13 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+    # Monetization & Subscription Fields
+    is_pro = Column(Boolean, default=False)
+    pro_expires_at = Column(DateTime, nullable=True)
+
     watchlist_items = relationship("Watchlist", back_populates="owner", cascade="all, delete-orphan")
     alert_rules = relationship("AlertRule", back_populates="owner", cascade="all, delete-orphan")
+    payments = relationship("PaymentTransaction", back_populates="owner", cascade="all, delete-orphan")
 
 class Watchlist(Base):
     __tablename__ = "watchlists"
@@ -38,3 +43,16 @@ class AlertRule(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     owner = relationship("User", back_populates="alert_rules")
+
+class PaymentTransaction(Base):
+    __tablename__ = "payment_transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(String, unique=True, index=True, nullable=False)
+    payment_id = Column(String, nullable=True)
+    amount = Column(Float, nullable=False)
+    status = Column(String, default="CREATED") # CREATED, SUCCESS, FAILED
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    owner = relationship("User", back_populates="payments")
